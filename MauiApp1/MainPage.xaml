@@ -1,0 +1,91 @@
+﻿<ContentPage 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Anti_Bunda_Mole.MainPage"
+    Title="Anti-Bunda Mole">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- Navbar fixa no topo -->
+        <Frame 
+            CornerRadius="15"
+            BackgroundColor="#33000000"
+            HasShadow="False"
+            Margin="10" />
+
+        <Grid Margin="10" Padding="10" ColumnDefinitions="*, Auto">
+            <Label Grid.Column="0" 
+                   Text="Anti Bunda-Mole" 
+                   FontSize="Header" 
+                   FontAttributes="Bold" 
+                   TextColor="#FFE000" 
+                   VerticalOptions="Center" />
+
+            <HorizontalStackLayout Grid.Column="1" Padding="10">
+                <ImageButton
+                    x:Name="btn_add"
+                    Source="add.png" 
+                    Clicked="OnCreateTaskClicked"
+                    BackgroundColor="Transparent"
+                    WidthRequest="64"
+                    HeightRequest="64"
+                    Margin="20"/>
+
+                <ImageButton
+                    x:Name="btn_config"
+                    Source="configuration.png" 
+                    Clicked="OnSettingsClicked"
+                    BackgroundColor="Transparent"
+                    WidthRequest="64"
+                    HeightRequest="64"/>
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- Conteúdo rolável e botão flutuante -->
+        <Grid Grid.Row="1">
+            <!-- ScrollView para tarefas -->
+            <ScrollView>
+                <StackLayout x:Name="PendingTasksContainer" Margin="10" Spacing="10"/>
+            </ScrollView>
+
+            <!-- Botão flutuante -->
+            <Border
+               
+                Stroke="#FFD700"
+                StrokeThickness="5"
+                BackgroundColor="#AA000000"
+                WidthRequest="70"
+                HeightRequest="70"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="20"
+                StrokeShape="RoundRectangle 35">
+                <ImageButton
+                    x:Name="btn_delete"
+                    Source="clean.png"
+                    Clicked="OnDeleteCompletedClicked"
+                    BackgroundColor="Transparent"
+                    Padding="10"/>
+            </Border>
+            <!-- Botão flutuante extra para testar Overlay -->
+            <Border
+                Stroke="#00FF00"
+                StrokeThickness="5"
+                BackgroundColor="#AA000000"
+                WidthRequest="70"
+                HeightRequest="70"
+                HorizontalOptions="Start"
+                VerticalOptions="End"
+                Margin="20"
+                StrokeShape="RoundRectangle 35">
+                <ImageButton
+                        x:Name="btn_testOverlay"
+                        Source="overlay.png" 
+                        Clicked="OnTestOverlayClicked"
+                        BackgroundColor="Transparent"
+                        Padding="10"
+                    />
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

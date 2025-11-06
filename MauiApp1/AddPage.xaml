@@ -1,0 +1,86 @@
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:sys="clr-namespace:System;assembly=netstandard"
+    x:Class="Anti_Bunda_Mole.AddPage"
+    Shell.NavBarIsVisible="False"
+    Padding="0">
+
+    <Grid RowDefinitions="Auto,*" Padding="0" Margin="0">
+        <Frame 
+    CornerRadius="15"
+    BackgroundColor="#33000000"
+    HasShadow="False"
+    Margin="10"
+>
+        </Frame>
+        <Grid 
+            Padding="10,10"
+            ColumnDefinitions="Auto,*,Auto">
+
+            <ImageButton 
+                x:Name="btn_back"
+                Source="ic_return.png"
+                WidthRequest="64"
+                HeightRequest="64"
+                BackgroundColor="Transparent"
+                Clicked="OnBackClicked"/>
+
+            <Label 
+                Text="Nova Tarefa"
+                FontSize="20"
+                FontAttributes="Bold"
+                TextColor="#FFE000"
+                HorizontalTextAlignment="Center"
+                VerticalTextAlignment="Center"
+                Grid.Column="1"/>
+
+            <ImageButton 
+                x:Name="btn_save"
+                Source="save.png"
+                WidthRequest="64"
+                HeightRequest="64"
+                BackgroundColor="Transparent"
+                Clicked="OnSaveClicked"
+                Grid.Column="2"/>
+        </Grid>
+
+        <ScrollView Grid.Row="1" Padding="20">
+            <VerticalStackLayout Spacing="15">
+                <Entry x:Name="TaskTitleEntry"
+                       Placeholder="Título da tarefa"
+                       FontSize="18"/>
+
+                <Editor x:Name="TaskDescriptionEditor"
+                        Placeholder="Descrição detalhada"
+                        AutoSize="TextChanges"
+                        FontSize="16"
+                        HeightRequest="120"/>
+                <HorizontalStackLayout Spacing="30">
+
+                    <Label 
+                    Text="Tipo de Tarefa:"
+                    FontAttributes="Bold"
+                    FontSize="25"
+                    />
+
+                    <RadioButton
+                    x:Name="rbTarefaRecorrente"
+                    Content="Tarefa Recorrente"
+                    GroupName="TipoTarefa"
+                    Value="Recorrente"
+                    TextColor="White"/>
+
+                    <RadioButton
+                    x:Name="rbTarefaUnica"
+                    Content="Tarefa Única"
+                    GroupName="TipoTarefa"
+                    Value="Unica"
+                    TextColor="White"/>
+                </HorizontalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>
