@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace MauiApp1
+namespace Anti_Bunda_Mole
 {
     public static class MauiProgram
     {

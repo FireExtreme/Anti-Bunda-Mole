@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
-
-namespace Anti_Bunda_Mole.Classes;
+using Anti_Bunda_Mole.Models;
+namespace Anti_Bunda_Mole.Methods;
 
 public class ConfigManager
 {
