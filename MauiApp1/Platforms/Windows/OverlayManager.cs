@@ -3,25 +3,24 @@ using Microsoft.UI.Composition;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using System;
 using System.Runtime.InteropServices;
 using WinRT;
 using Border = Microsoft.UI.Xaml.Controls.Border;
 using Grid = Microsoft.UI.Xaml.Controls.Grid;
-using SolidColorBrush = Microsoft.UI.Xaml.Media.SolidColorBrush;
+using Window = Microsoft.UI.Xaml.Window;
 
 namespace Anti_Bunda_Mole.Platforms.Windows
 {
     public static class OverlayManager
     {
-        private static Microsoft.UI.Xaml.Window _overlayWindow;
+        private static Window _overlayWindow;
         private static IntPtr _hwnd = IntPtr.Zero;
         private static MicaController _micaController;
         private static DesktopAcrylicController _acrylicController;
         private static SystemBackdropConfiguration _configuration;
 
-        // Win32 constants
+        // Win32
         private const int GWL_EXSTYLE = -20;
         private const int GWL_STYLE = -16;
         private const uint WS_CAPTION = 0x00C00000;
@@ -51,24 +50,13 @@ namespace Anti_Bunda_Mole.Platforms.Windows
         [DllImport("user32.dll")]
         private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
         [DllImport("shell32.dll", CallingConvention = CallingConvention.StdCall)]
+
         private static extern uint SHAppBarMessage(uint dwMessage, ref APPBARDATA pData);
-
-        [DllImport("user32.dll")]
-        private static extern int GetSystemMetrics(int nIndex);
-
-        [DllImport("user32.dll")]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
-            int X, int Y, int cx, int cy, uint uFlags);
-
-        private const int SM_CXSCREEN = 0;
-        private const int SM_CYSCREEN = 1;
-        private const uint ABM_NEW = 0x00000000;
-        private const uint ABM_REMOVE = 0x00000001;
-        private const uint ABM_QUERYPOS = 0x00000002;
-        private const uint ABM_SETPOS = 0x00000003;
-        private const int ABE_LEFT = 0;
-        private const int ABE_RIGHT = 2;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct APPBARDATA
@@ -90,15 +78,25 @@ namespace Anti_Bunda_Mole.Platforms.Windows
         private static IntPtr CustomWndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             if (msg == WM_CLOSE)
-                return IntPtr.Zero; // ignora tentativas de fechar
+                return IntPtr.Zero; // ignora qualquer tentativa de fechar
             return CallWindowProc(_oldWndProc, hWnd, msg, wParam, lParam);
         }
+
+        [DllImport("user32.dll", SetLastError = true)]
+            private static extern bool SetWindowPos(
+                IntPtr hWnd,
+                IntPtr hWndInsertAfter,
+                int X,
+                int Y,
+                int cx,
+                int cy,
+                uint uFlags);
 
         public static void ShowOverlay(UIElement content, OverlaySide side, int width)
         {
             if (_overlayWindow != null) return;
 
-            _overlayWindow = new Microsoft.UI.Xaml.Window();
+            _overlayWindow = new Window();
             _overlayWindow.ExtendsContentIntoTitleBar = true;
             _overlayWindow.SetTitleBar(new Grid());
 
@@ -106,7 +104,7 @@ namespace Anti_Bunda_Mole.Platforms.Windows
             {
                 Padding = new Microsoft.UI.Xaml.Thickness(16),
                 CornerRadius = new Microsoft.UI.Xaml.CornerRadius(8),
-                Background = new SolidColorBrush(ColorHelper.FromArgb(180, 0, 0, 0)),
+                Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(ColorHelper.FromArgb(180, 0, 0, 0)),
                 Child = content
             };
 
@@ -120,24 +118,75 @@ namespace Anti_Bunda_Mole.Platforms.Windows
             exStyle |= WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
             SetWindowLongPtr(_hwnd, GWL_EXSTYLE, new IntPtr(exStyle));
 
-            // Remove botões, bordas e título
+            // Remove botões padrão
             long style = GetWindowLongPtr(_hwnd, GWL_STYLE).ToInt64();
-            style &= ~(WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME);
+            style &= ~(WS_CAPTION | WS_SYSMENU);
+            SetWindowLongPtr(_hwnd, GWL_STYLE, new IntPtr(style));
+
+            // Permite redimensionamento
+            style |= WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
             SetWindowLongPtr(_hwnd, GWL_STYLE, new IntPtr(style));
 
             // Intercepta fechamento
             _oldWndProc = SetWindowLongPtr(_hwnd, GWL_WNDPROC, _newWndProcDelegate);
 
-            // Define posição como AppBar
-            int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-            int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-            RegisterAppBar(_hwnd, width, side, screenWidth, screenHeight);
+            // Inicializa AppBar
+            UpdateAppBarPosition(width, side);
 
-            // Aplica efeito translúcido
+            // Atualiza posição ao redimensionar
+            _overlayWindow.SizeChanged += (s, e) =>
+            {
+                if (_hwnd == IntPtr.Zero) return;
+
+                if (GetWindowRect(_hwnd, out RECT rect))
+                {
+                    int currentWidth = rect.right - rect.left;
+                    UpdateAppBarPosition(currentWidth, side);
+                }
+            };
+
             TrySetBackdrop(_overlayWindow);
         }
 
-        private static void TrySetBackdrop(Microsoft.UI.Xaml.Window window)
+        private static void UpdateAppBarPosition(int width, OverlaySide side)
+        {
+            if (_hwnd == IntPtr.Zero) return;
+
+            int screenWidth = GetSystemMetrics(0);
+            int screenHeight = GetSystemMetrics(1);
+
+            APPBARDATA abd = new APPBARDATA
+            {
+                cbSize = Marshal.SizeOf<APPBARDATA>(),
+                hWnd = _hwnd,
+                uEdge = (uint)(side == OverlaySide.Left ? 0 : 2),
+                rc = new RECT
+                {
+                    top = 0,
+                    bottom = screenHeight
+                }
+            };
+
+            if (side == OverlaySide.Left)
+            {
+                abd.rc.left = 0;
+                abd.rc.right = width;
+            }
+            else
+            {
+                abd.rc.right = screenWidth;
+                abd.rc.left = screenWidth - width;
+            }
+
+            SHAppBarMessage(0x00000000, ref abd);
+            SHAppBarMessage(0x00000002, ref abd);
+            SHAppBarMessage(0x00000003, ref abd);
+
+            SetWindowPos(_hwnd, IntPtr.Zero, abd.rc.left, abd.rc.top,
+                abd.rc.right - abd.rc.left, abd.rc.bottom - abd.rc.top, 0);
+        }
+
+        private static void TrySetBackdrop(Window window)
         {
             _configuration = new SystemBackdropConfiguration
             {
@@ -181,35 +230,6 @@ namespace Anti_Bunda_Mole.Platforms.Windows
             _hwnd = IntPtr.Zero;
         }
 
-        private static void RegisterAppBar(IntPtr hwnd, int width, OverlaySide side, int screenWidth, int screenHeight)
-        {
-            APPBARDATA abd = new APPBARDATA
-            {
-                cbSize = Marshal.SizeOf<APPBARDATA>(),
-                hWnd = hwnd,
-                uEdge = (uint)(side == OverlaySide.Left ? ABE_LEFT : ABE_RIGHT),
-                rc = new RECT { top = 0, bottom = screenHeight }
-            };
-
-            if (side == OverlaySide.Left)
-            {
-                abd.rc.left = 0;
-                abd.rc.right = width;
-            }
-            else
-            {
-                abd.rc.right = screenWidth;
-                abd.rc.left = screenWidth - width;
-            }
-
-            SHAppBarMessage(ABM_NEW, ref abd);
-            SHAppBarMessage(ABM_QUERYPOS, ref abd);
-            SHAppBarMessage(ABM_SETPOS, ref abd);
-
-            SetWindowPos(hwnd, IntPtr.Zero, abd.rc.left, abd.rc.top,
-                abd.rc.right - abd.rc.left, abd.rc.bottom - abd.rc.top, 0);
-        }
-
         private static void RemoveAppBar(IntPtr hwnd)
         {
             APPBARDATA abd = new APPBARDATA
@@ -217,8 +237,11 @@ namespace Anti_Bunda_Mole.Platforms.Windows
                 cbSize = Marshal.SizeOf<APPBARDATA>(),
                 hWnd = hwnd
             };
-            SHAppBarMessage(ABM_REMOVE, ref abd);
+            SHAppBarMessage(0x00000001, ref abd);
         }
+
+        [DllImport("user32.dll")]
+        private static extern int GetSystemMetrics(int nIndex);
     }
 
     public enum OverlaySide
