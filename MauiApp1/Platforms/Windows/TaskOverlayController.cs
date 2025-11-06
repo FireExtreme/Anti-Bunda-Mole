@@ -45,6 +45,7 @@ namespace Anti_Bunda_Mole.Platforms.Windows
 
             var mauiPanel = buildCards();
 
+            // StackPanel WinUI para receber os filhos MAUI convertidos
             var xamlPanel = new StackPanel
             {
                 Orientation = Orientation.Vertical,
@@ -61,6 +62,7 @@ namespace Anti_Bunda_Mole.Platforms.Windows
             if (mauiContext == null)
                 return;
 
+            // Converte filhos MAUI -> WinUI
             foreach (var mauiChild in children)
             {
                 var native = mauiChild.ToPlatform(mauiContext);
@@ -68,8 +70,9 @@ namespace Anti_Bunda_Mole.Platforms.Windows
                     xamlPanel.Children.Add(element);
             }
 
-            FrameworkElement containerChild = xamlPanel;
+            FrameworkElement containerChild;
 
+            // Se bottomToTop, usa grid para posicionamento
             if (bottomToTop)
             {
                 var grid = new Grid { VerticalAlignment = VerticalAlignment.Stretch };
@@ -77,11 +80,24 @@ namespace Anti_Bunda_Mole.Platforms.Windows
                 grid.Children.Add(xamlPanel);
                 containerChild = grid;
             }
+            else
+            {
+                containerChild = xamlPanel;
+            }
 
+            // Aqui a diferença: adiciona ScrollViewer do WinUI
+            var scrollViewer = new Microsoft.UI.Xaml.Controls.ScrollViewer
+            {
+                Content = containerChild,
+                VerticalScrollBarVisibility = Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Disabled
+            };
+
+            // Container final com padding
             var container = new Border
             {
                 Padding = new Thickness(16),
-                Child = containerChild
+                Child = scrollViewer
             };
 
             OverlayManager.ShowOverlay(container, side, width: 400);
