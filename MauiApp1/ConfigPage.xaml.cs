@@ -1,4 +1,4 @@
-using Anti_Bunda_Mole.Classes;
+using Anti_Bunda_Mole.Models;
 using Anti_Bunda_Mole.Methods;
 
 namespace Anti_Bunda_Mole;

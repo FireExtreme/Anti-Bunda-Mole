@@ -1,5 +1,6 @@
 ﻿#if WINDOWS
-using Anti_Bunda_Mole.Classes;
+using Anti_Bunda_Mole.Models;
+using Anti_Bunda_Mole.Methods;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Platform;
 using Microsoft.UI.Xaml;
