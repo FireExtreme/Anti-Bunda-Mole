@@ -1,6 +1,6 @@
 ﻿using Android.App;
 using Android.Runtime;
-using MauiApp1;
+using Anti_Bunda_Mole;
 
 namespace Anti_Bunda_Mole
 {
