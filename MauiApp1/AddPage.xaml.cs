@@ -30,7 +30,7 @@ public partial class AddPage : ContentPage
     {
         await _an.AnimateButton((ImageButton)sender);
 
-        var task = new TaskItem
+        var task = new TaskModel
         {
             Title = TaskTitleEntry.Text,
             Description = TaskDescriptionEditor.Text,

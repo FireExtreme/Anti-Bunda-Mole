@@ -9,7 +9,7 @@ namespace Anti_Bunda_Mole.Methods
     internal class TaskManager
     {
         private readonly SQLiteAsyncConnection _database;
-        public List<TaskItem> TasksInMemory { get; private set; } = new List<TaskItem>();
+        public List<TaskModel> TasksInMemory { get; private set; } = new List<TaskModel>();
 
         public TaskManager()
         {
@@ -20,25 +20,25 @@ namespace Anti_Bunda_Mole.Methods
 
             var dbPath = Path.Combine(appFolder, "tasks.db3");
             _database = new SQLiteAsyncConnection(dbPath);
-            _database.CreateTableAsync<TaskItem>().Wait();
+            _database.CreateTableAsync<TaskModel>().Wait();
         }
 
-        public Task<List<TaskItem>> GetAllTasksAsync()
+        public Task<List<TaskModel>> GetAllTasksAsync()
         {
-            return _database.Table<TaskItem>().ToListAsync();
+            return _database.Table<TaskModel>().ToListAsync();
         }
 
-        public Task<List<TaskItem>> GetPendingTasksAsync()
+        public Task<List<TaskModel>> GetPendingTasksAsync()
         {
-            return _database.Table<TaskItem>().Where(t => !t.IsCompleted).ToListAsync();
+            return _database.Table< TaskModel   >().Where(t => !t.IsCompleted).ToListAsync();
         }
 
-        public Task<TaskItem> GetTaskByIdAsync(int id)
+        public Task<TaskModel> GetTaskByIdAsync(int id)
         {
-            return _database.Table<TaskItem>().Where(t => t.Id == id).FirstOrDefaultAsync();
+            return _database.Table< TaskModel>().Where(t => t.Id == id).FirstOrDefaultAsync();
         }
 
-        public async Task SaveTaskAsync(TaskItem task)
+        public async Task SaveTaskAsync(TaskModel task)
         {
             if (task.Id != 0)
                 await _database.UpdateAsync(task);
@@ -48,14 +48,14 @@ namespace Anti_Bunda_Mole.Methods
             await LoadTasksIntoMemoryAsync(); 
         }
 
-        public async Task DeleteTaskAsync(TaskItem task)
+        public async Task DeleteTaskAsync(TaskModel task)
         {
             await _database.DeleteAsync(task);
             await LoadTasksIntoMemoryAsync(); 
         }
         public async Task LoadTasksIntoMemoryAsync()
         {
-            TasksInMemory = await _database.Table<TaskItem>().ToListAsync();
+            TasksInMemory = await _database.Table<TaskModel>().ToListAsync();
         }
 
     }

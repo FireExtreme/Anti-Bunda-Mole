@@ -3,7 +3,7 @@ using System;
 
 namespace Anti_Bunda_Mole.Methods
 {
-    public class TaskItem
+    public class TaskModel
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }

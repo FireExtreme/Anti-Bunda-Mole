@@ -28,9 +28,9 @@ namespace Anti_Bunda_Mole.Platforms.Windows
                 );
 
                 var db = new SQLiteConnection(dbPath);
-                db.CreateTable<TaskItem>();
+                db.CreateTable<TaskModel>();
 
-                var pendingTasks = db.Table<TaskItem>().Where(t => !t.IsCompleted).ToList();
+                var pendingTasks = db.Table<TaskModel>().Where(t => !t.IsCompleted).ToList();
 
                 if (!pendingTasks.Any())
                 {

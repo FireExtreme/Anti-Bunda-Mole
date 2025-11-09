@@ -8,7 +8,7 @@ namespace Anti_Bunda_Mole
     {
         private Animations _an;
         private TaskManager _taskManager;
-        private TaskItem _taskmd;
+        private TaskModel _taskmd;
         private TaskEvents _tkev;
 
         public MainPage()
@@ -16,7 +16,7 @@ namespace Anti_Bunda_Mole
             InitializeComponent();
             _an = new Animations();
             _taskManager = new TaskManager();
-            _taskmd = new TaskItem();
+            _taskmd = new TaskModel();
 
             NavigationPage.SetHasNavigationBar(this, false);
 
@@ -79,7 +79,7 @@ namespace Anti_Bunda_Mole
 
         }
 
-        private View CreateTaskView(TaskItem task, bool isCompleted)
+        private View CreateTaskView(TaskModel task, bool isCompleted)
         {
             // Título
             var titleLabel = new Label
@@ -208,7 +208,7 @@ namespace Anti_Bunda_Mole
 
                 foreach (var border in completedTasks)
                 {
-                    if (border.BindingContext is TaskItem task)
+                    if (border.BindingContext is TaskModel task)
                     {
                         await _taskManager.DeleteTaskAsync(task);
                     }

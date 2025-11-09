@@ -25,8 +25,7 @@ namespace Anti_Bunda_Mole.Platforms.Windows
         private static Func<ScrollView>? _lastBuilder;
 
         private static FloatingButtonWindow? _floatingButton;
-        private static Timer? _scheduleTimer;
-        private static bool _overlayAtivoPorHorario = false;
+        private static OverlayScheduleManager? _scheduleManager;
 
         public static void ShowTasks(Func<ScrollView> buildCards)
         {
@@ -46,6 +45,7 @@ namespace Anti_Bunda_Mole.Platforms.Windows
 
         private static void BuildAndShowOverlay(Configuracoes config, Func<ScrollView> buildCards)
         {
+            // Define side and order based on config
             OverlaySide side = config.PosicaoTarefas?.Contains("_l") == true
                 ? OverlaySide.Left
                 : OverlaySide.Right;
@@ -107,7 +107,7 @@ namespace Anti_Bunda_Mole.Platforms.Windows
 
         private static void OnConfigChanged()
         {
-            Close();
+            CloseOverlay();
             if (_lastBuilder != null)
             {
                 var config = ConfigManager.Instance.Config;
@@ -115,13 +115,13 @@ namespace Anti_Bunda_Mole.Platforms.Windows
             }
         }
 
-        public static void Close()
+        public static void CloseOverlay()
         {
             OverlayManager.CloseOverlay();
         }
 
         // ============================
-        // CONTROLE DO BOTÃO FLUTUANTE
+        // FLOATING BUTTON CONTROL
         // ============================
 
         public static void ShowFloatingButton()
@@ -147,7 +147,7 @@ namespace Anti_Bunda_Mole.Platforms.Windows
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Erro ao reiniciar: {ex}");
+                    System.Diagnostics.Debug.WriteLine($"Error restarting: {ex}");
                 }
             };
 
@@ -178,91 +178,34 @@ namespace Anti_Bunda_Mole.Platforms.Windows
                 _floatingButton.Show(grid);
             }
 
-            StartScheduleCheck();
+            StartSchedule();
         }
 
         public static void CloseFloatingButton()
         {
             _floatingButton?.Close();
             _floatingButton = null;
-            StopScheduleCheck();
+            StopSchedule();
         }
 
         // ============================
-        // CONTROLE DO SCHEDULE
+        // SCHEDULE CONTROL
         // ============================
 
-        private static void StartScheduleCheck()
+        private static void StartSchedule()
         {
-            if (_scheduleTimer != null) return;
+            if (_scheduleManager == null)
+                _scheduleManager = new OverlayScheduleManager();
 
-            _scheduleTimer = new Timer(_ =>
-            {
-                try
-                {
-                    ConfigManager.Instance.LoadIfNeeded();
-                    var config = ConfigManager.Instance.Config;
-
-                    var agora = DateTime.Now;
-                    int diaAtual = (int)agora.DayOfWeek; // 0 = domingo, 6 = sábado
-
-                    bool dentroDoHorario = false;
-
-                    if (config.Dias.ContainsKey(diaAtual))
-                    {
-                        var diaConfig = config.Dias[diaAtual];
-                        if (diaConfig.Ativo)
-                        {
-                            dentroDoHorario = diaConfig.Periodos.Any(p =>
-                            {
-                                if (TimeSpan.TryParse(p.Inicio, out var inicio) &&
-                                    TimeSpan.TryParse(p.Fim, out var fim))
-                                {
-                                    return agora.TimeOfDay >= inicio && agora.TimeOfDay < fim;
-                                }
-                                return false;
-                            });
-                        }
-                    }
-
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        // Se horário ativo, mostra overlay com os cards
-                        if (dentroDoHorario)
-                        {
-                            var builder = new OverlayCardBuilder();
-                            ShowTasks(builder.BuildCards);
-                            _overlayAtivoPorHorario = true;
-                        }
-                        else
-                        {
-                            CloseOverlayIfActive();
-                        }
-                    });
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Erro no ScheduleChecker: {ex}");
-                }
-            }, null, 0, 1000);
+            _scheduleManager.Start();
         }
 
-        private static void StopScheduleCheck()
+        private static void StopSchedule()
         {
-            _scheduleTimer?.Dispose();
-            _scheduleTimer = null;
-        }
-
-        private static void CloseOverlayIfActive()
-        {
-            if (!_overlayAtivoPorHorario) return;
-
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                Close();
-                _overlayAtivoPorHorario = false;
-            });
+            _scheduleManager?.Stop();
+            _scheduleManager = null;
         }
     }
+
 }
 #endif
