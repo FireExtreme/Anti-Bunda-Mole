@@ -42,7 +42,10 @@
                     <Label Text="Intervalo de Aviso (minutos):" TextColor="White" VerticalTextAlignment="Center"/>
                     <Entry x:Name="entry_intervalo" Keyboard="Numeric" WidthRequest="60" HorizontalOptions="End"/>
                 </HorizontalStackLayout>
-
+                <HorizontalStackLayout VerticalOptions="Center">
+                    <Button x:Name="btn_select_ringtone" Text="Selecionar Som" Clicked="OnSelectRingtoneClicked"/>
+                    <Label x:Name="lbl_ringtone" Text="Arquivo atual: ringtone.wav" TextColor="White"/>
+                </HorizontalStackLayout>
                 <!-- Posição das Tarefas -->
                 <VerticalStackLayout Padding="10" Spacing="10">
                     <Label Text="Posição das tarefas:" TextColor="White" FontAttributes="Bold"/>

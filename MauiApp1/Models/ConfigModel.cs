@@ -17,4 +17,6 @@ public class Configuracoes
     public int IntervaloAviso { get; set; } // em minutos
     public Dictionary<int, DiaConfig> Dias { get; set; } = new(); // chave agora é int
     public string PosicaoTarefas { get; set; } = "";
+
+    public string CaminhoRingtone { get; set; } = "ringtone.wav"; // valor padrão
 }

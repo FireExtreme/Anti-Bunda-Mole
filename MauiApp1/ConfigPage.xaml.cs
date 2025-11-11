@@ -1,10 +1,13 @@
-using Anti_Bunda_Mole.Models;
 using Anti_Bunda_Mole.Methods;
+using Anti_Bunda_Mole.Models;
 using Microsoft.Maui.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
+using NAudio.Wave;
+using Microsoft.Maui.Storage;
 
 namespace Anti_Bunda_Mole;
 
@@ -13,10 +16,7 @@ public partial class ConfigPage : ContentPage
     private Animations _an;
     private AuxiliarFuncs _aux_f;
 
-    // Guarda os TimePickers de cada período por número do dia
     private Dictionary<int, List<(TimePicker inicio, TimePicker fim)>> periodosPorDia;
-
-    // RadioButtons personalizados
     private List<Frame> posicoesFrames;
     private Frame frameSelecionado;
 
@@ -39,7 +39,6 @@ public partial class ConfigPage : ContentPage
     #region Formulário Dinâmico
     private void CriarFormularioDinamico()
     {
-        // Dia da semana como número + nome para exibição
         var diasSemana = new (int DiaNumero, string Nome)[]
         {
             (0, "Dom"), (1, "Seg"), (2, "Ter"),
@@ -58,28 +57,18 @@ public partial class ConfigPage : ContentPage
             };
 
             var diaStack = new VerticalStackLayout { Spacing = 5 };
+            diaStack.Children.Add(new Label { Text = nome, TextColor = Colors.White, FontAttributes = FontAttributes.Bold });
 
-            // Label do dia
-            diaStack.Children.Add(new Label
-            {
-                Text = nome,
-                TextColor = Colors.White,
-                FontAttributes = FontAttributes.Bold
-            });
-
-            // Checkbox para ativar o dia
             var chkDia = new CheckBox { Color = Colors.Gold };
             var horizontalCheck = new HorizontalStackLayout { Spacing = 5 };
             horizontalCheck.Children.Add(chkDia);
             horizontalCheck.Children.Add(new Label { Text = "Ativar", TextColor = Colors.White, VerticalTextAlignment = TextAlignment.Center });
             diaStack.Children.Add(horizontalCheck);
 
-            // Períodos
             var periodos = new List<(TimePicker, TimePicker)>();
             for (int i = 0; i < 2; i++)
             {
                 var periodoStack = new HorizontalStackLayout { Spacing = 10 };
-
                 var tpInicio = new TimePicker { Format = "HH:mm", Time = new TimeSpan(8, 0, 0) };
                 var tpFim = new TimePicker { Format = "HH:mm", Time = new TimeSpan(12, 0, 0) };
 
@@ -104,13 +93,7 @@ public partial class ConfigPage : ContentPage
     #region RadioButtons personalizados
     private void InicializarRadioButtons()
     {
-        posicoesFrames = new List<Frame>
-        {
-            person_cb_upper_l,
-            person_cb_upper_r,
-            person_cb_bottom_l,
-            person_cb_bottom_r
-        };
+        posicoesFrames = new List<Frame> { person_cb_upper_l, person_cb_upper_r, person_cb_bottom_l, person_cb_bottom_r };
 
         foreach (var frame in posicoesFrames)
         {
@@ -137,10 +120,7 @@ public partial class ConfigPage : ContentPage
         frameSelecionado.HasShadow = true;
     }
 
-    private string ObterPosicaoSelecionada()
-    {
-        return frameSelecionado?.StyleId ?? "";
-    }
+    private string ObterPosicaoSelecionada() => frameSelecionado?.StyleId ?? "";
     #endregion
 
     #region Helpers
@@ -153,7 +133,7 @@ public partial class ConfigPage : ContentPage
     }
     #endregion
 
-    #region Eventos Botões
+    #region Botões
     private async void OnBackClicked(object sender, EventArgs e)
     {
         await _an.AnimateButton((ImageButton)sender);
@@ -179,11 +159,7 @@ public partial class ConfigPage : ContentPage
 
             var chkDia = GetCheckBoxDoDia(diaNumero);
 
-            config.Dias[diaNumero] = new DiaConfig
-            {
-                Ativo = chkDia.IsChecked,
-                Periodos = periodoList
-            };
+            config.Dias[diaNumero] = new DiaConfig { Ativo = chkDia.IsChecked, Periodos = periodoList };
         }
 
         await ConfigManager.Instance.SaveAsync();
@@ -192,7 +168,7 @@ public partial class ConfigPage : ContentPage
     }
     #endregion
 
-    #region Carregar Configurações
+    #region Carregar Config
     private async Task CarregarConfiguracoesAsync()
     {
         await ConfigManager.Instance.LoadAsync();
@@ -220,6 +196,65 @@ public partial class ConfigPage : ContentPage
                 periodos[i].fim.Time = TimeSpan.Parse(diaConfig.Periodos[i].Fim);
             }
         }
+    }
+    #endregion
+
+    #region Ringtone
+    private async void OnSelectRingtoneClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            var audioFileType = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+            {
+                { DevicePlatform.WinUI, new[] { ".wav", ".mp3", ".m4a" } },
+                { DevicePlatform.Android, new[] { "audio/*" } },
+                { DevicePlatform.iOS, new[] { "public.audio" } }
+            });
+
+            var result = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Escolha um arquivo de som",
+                FileTypes = audioFileType
+            });
+
+            if (result == null) return;
+
+            var targetFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AntiBundaMole");
+            Directory.CreateDirectory(targetFolder);
+
+            var fileName = Path.GetFileName(result.FullPath);
+            var targetPath = Path.Combine(targetFolder, fileName);
+
+            using var stream = await result.OpenReadAsync();
+            using var fileStream = File.Create(targetPath);
+            await stream.CopyToAsync(fileStream);
+
+            if (!targetPath.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+            {
+                var wavPath = Path.ChangeExtension(targetPath, ".wav");
+                await ConvertToWavAsync(targetPath, wavPath);
+                File.Delete(targetPath);
+                targetPath = wavPath;
+            }
+
+            ConfigManager.Instance.Config.CaminhoRingtone = targetPath;
+            lbl_ringtone.Text = $"Arquivo atual: {Path.GetFileName(targetPath)}";
+
+            await ConfigManager.Instance.SaveAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Erro", $"Falha ao selecionar o som: {ex.Message}", "OK");
+        }
+    }
+
+    public static async Task ConvertToWavAsync(string inputPath, string outputPath)
+    {
+        await Task.Run(() =>
+        {
+            using var reader = new AudioFileReader(inputPath);
+            WaveFileWriter.CreateWaveFile(outputPath, reader);
+        });
     }
     #endregion
 }
