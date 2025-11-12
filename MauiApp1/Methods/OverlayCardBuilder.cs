@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using Anti_Bunda_Mole.Methods;
 
-namespace Anti_Bunda_Mole.Platforms.Windows
+namespace Anti_Bunda_Mole.Methods
 {
     public class OverlayCardBuilder
     {

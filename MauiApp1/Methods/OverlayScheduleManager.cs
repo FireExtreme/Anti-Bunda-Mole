@@ -4,11 +4,11 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Threading;
-using Anti_Bunda_Mole.Methods;
 using Anti_Bunda_Mole.Models;
+using Anti_Bunda_Mole.Platforms.Windows;
 using SQLite;
 
-namespace Anti_Bunda_Mole.Platforms.Windows
+namespace Anti_Bunda_Mole.Methods
 {
     public class OverlayScheduleManager
     {
